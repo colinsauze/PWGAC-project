@@ -1,0 +1,203 @@
+#!/usr/bin/perl -w
+
+
+
+#perl ${BINDIR}/heredoc.pl $TDIR $TNAME $QNAME $chainParams $lastzParams $target_species $species
+my $workdir = $ARGV[0];
+my $TARGET = $ARGV[1];
+my $QUERY = $ARGV[2];
+my $CHAIN_PARAMS = $ARGV[3];
+my $LASTZ_PARAMS=$ARGV[4];
+my $target_species = $ARGV[5];
+my $species = $ARGV[6];
+$LASTZ_PARAMS=~s/:/ /g;
+
+
+my $USERNAME=$ENV{USER};
+chomp($USERNAME);
+
+
+chdir $workdir;
+#my $UCSC="/app/genomics/UCSC_Genome_Browser/20130827/gnu-4.6.2/bin/x86_64"; 
+
+#my $UCSC=$ARGV[5];
+
+print "got this species - $species CHAIN_PARAMS=$CHAIN_PARAMS  LASTZ_PARAMS=$LASTZ_PARAMS\n";
+
+my $PWD="/home/$USERNAME/PARALLEL_LASTZ/$species";
+
+#my $PWD=$ARGV[6];
+
+my $BIN="$PWD/bin";
+my $UCSC="$BIN/UCSC_Genome_Browser/";
+
+#We will need to build a file that can be invoked as a shell script 
+#heredoc.pl takes its name because we build this file 
+#this calls the following tools 
+
+#twoBitToFa
+#lastZ
+#lavtopsl
+#liftup
+
+#the target and query are passed as parameters 
+
+#the .lav files are the output from lastz
+#this is converted to psl 
+#finally we do chains on the psl 
+
+
+#this script is saved as runLastZ_target_query
+#which is invoked by the main perl scripts
+
+
+
+my $runLastZFile = <<"DATA";
+#!/bin/csh -f
+
+
+
+echo "LASTZ executing on the node \$HOSTNAME"
+set NEWLINE=" ; "
+#target
+set FT=\$1
+#query
+set FQ=\$2
+
+#the query and target chunk are coming from the file - query.list and target.list
+#the format for that chr-1:2000000 
+
+#the file has the path and the chunk
+#this detail is parsed by the main script and fed as a parameter to this shell script when invoked 
+
+set Q_CHUNK=\$3
+set T_CHUNK=\$4
+
+set LAV_FILE=\$5
+
+#we create the random directory as the threads running in parallel should not interfere with one another
+#Read RANDOM = UNIQUE
+
+
+set FINAL_RANDOM=\${FT}_\${LAV_FILE}_\${FQ}
+
+#set the temporary working directory, this will be deleted later
+set tmpDir = /tmp/\${FINAL_RANDOM}\${FT}
+
+
+if (! -d $workdir/raw) then
+	mkdir $workdir/raw
+endif
+
+if (! -d $workdir/psl) then
+        mkdir $workdir/psl
+endif
+
+if (! -d  \${tmpDir}) then
+        mkdir \${tmpDir}
+endif
+
+#************************************************************************
+#                         TWO BIT TO FA
+#************************************************************************
+
+
+echo "$UCSC/twoBitToFa \$T_CHUNK \${tmpDir}/\${FT}.fa \${NEWLINE}"
+
+$UCSC/twoBitToFa \$T_CHUNK \${tmpDir}/\${FT}.fa
+
+
+
+echo "$UCSC/twoBitToFa \$Q_CHUNK \${tmpDir}/\${FQ}.fa \${NEWLINE}"
+
+$UCSC/twoBitToFa \$Q_CHUNK \${tmpDir}/\${FQ}.fa
+
+
+#*************************************************************************
+#			 LASTZ
+#*************************************************************************
+
+#USER_NOTE: CHANGE THE HARDCODED lastZ parameters if you want to!
+#the matrix.q - the scoring matrix for lastZ, change this if you want to. replace the file in the conf/ directory
+
+echo "$BIN/lastz-distrib-1.03.54/bin/lastz \${tmpDir}/\${FT}.fa  \${tmpDir}/\${FQ}.fa  E=30 H=2000 K=3000 L=2200 O=400 Q=$PWD/conf/matrix.q > $workdir/raw/\${LAV_FILE}.lav \${NEWLINE}"
+
+$BIN/lastz-distrib-1.03.54/bin/lastz \${tmpDir}/\${FT}.fa  \${tmpDir}/\${FQ}.fa  E=30 H=2000 K=3000 L=2200 O=400 Q=$PWD/conf/matrix.q  > $workdir/raw/\${LAV_FILE}.lav
+
+
+#*************************************************************************
+#			LAV to PSL
+#*************************************************************************
+
+
+
+echo "$UCSC/lavToPsl $workdir/raw/\${LAV_FILE}.lav stdout | $workdir/bin/liftUp -type=\.psl stdout $PWD/\$FQ/\$FT/target.lift error stdin | $workdir/bin/liftUp -nohead -pslQ -type=.psl stdout $PWD/\$FQ/\$FT/query\.lift error stdin \| gzip -c \> $workdir/psl\/\${LAV_FILE}\.psl.gz \${NEWLINE}"
+
+$UCSC/lavToPsl $workdir/raw/\${LAV_FILE}.lav stdout | $BIN/liftUp -type=\.psl stdout $PWD/\$FQ/\$FT/target.lift error stdin | $BIN/liftUp -nohead -pslQ -type=.psl stdout $PWD/\$FQ/\$FT/query\.lift error stdin \| gzip -c \> $workdir/psl\/\${LAV_FILE}\.psl.gz
+
+
+rm -f \${tmpDir}/\${FT}\.fa \${tmpDir}\/\${FQ}\.fa
+
+rmdir --ignore-fail-on-non-empty \${tmpDir}
+
+DATA
+
+open (RUNL, ">runLastz_${TARGET}_${QUERY}");
+print RUNL $runLastZFile;
+close(RUNL);
+
+
+###################### Sid - LASTZ build complete #############################################################
+
+# Proceed to chaining now
+#repeat the same this as above
+#but this time do not build a heredoc
+#put the content into a variable
+#push it to a file
+
+#the variable of choice = $chain
+
+#########################################################################################################
+
+
+my $chain = "#!/bin/csh -fe\n echo \"chaining executing on the machine \$HOSTNAME\"\n";
+
+my $chain_directory="$PWD/$QUERY/$TARGET";
+foreach my $T (`cat target.list`)
+{
+
+
+
+
+	chomp($T);
+
+
+	my $index_t=index($T,':');
+        my $length=length($T);
+        my $t=substr($T,$index_t+1,$length-$index_t);
+
+
+	#These are the tools that are getting invoked 
+
+	#step 1: zcat the output from psl
+	#step 2: take the output from above and run axtChain on the output  with the the target.2bit file as input 
+	#the TARGET-Genomes/$target_species directory is a pre-requisite for the pipeline to be functional
+
+	#axtChain - this creates the chains
+
+	#step 3: feed the output of axtChain to chainAntiRepeat - Get rid of chains that are placed in repeats
+
+
+	$chain = $chain. "zcat $chain_directory/psl/$t\.*\.psl.gz | $UCSC/axtChain -psl -verbose=0 $CHAIN_PARAMS \tstdin /$PWD/../GENOMES_DB/TARGET-Genomes/$target_species/$TARGET.2bit /$PWD/../GENOMES_DB/Genomes/$QUERY.2bit stdout | $UCSC/chainAntiRepeat /$PWD/../GENOMES_DB/TARGET-Genomes/$target_species/$TARGET.2bit /$PWD/../GENOMES_DB/Genomes/$QUERY.2bit stdin $chain_directory/chain/$t.$QUERY.chain\n";
+}
+
+
+$chain = $chain."find $chain_directory/chain -name \"*.chain\" | $UCSC/chainMergeSort -inputList=stdin | gzip -c > $TARGET.$QUERY.all.chain.gz";
+
+#push this to a shell script 
+#this gets invoked by the step2 perl script
+
+
+open (CHAIN, ">chainJobs_${TARGET}_${QUERY}.csh");
+print CHAIN $chain;
+close(CHAIN);

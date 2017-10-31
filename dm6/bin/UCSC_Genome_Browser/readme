@@ -1,0 +1,6 @@
+the following utils are needed from: https://github.com/ucscGenomeBrowser/kent/tree/master/src/hg/mouseStuff 
+https://github.com/ucscGenomeBrowser/kent/tree/master/src/utils/twoBitInfo
+https://github.com/ucscGenomeBrowser/kent/tree/master/src/utils/twoBitToFa 
+
+axtChain  chainAntiRepeat  chainMergeSort  lavToPsl  twoBitInfo  twoBitToFa
+

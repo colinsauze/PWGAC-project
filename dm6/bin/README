@@ -1,0 +1,26 @@
+This is the bin directory for the LASTZ pipeline to be functional on ANY HPC cluster
+
+
+The list of the files and its description is as below:
+_____________________________________________________
+
+
+1) heredoc.pl
+
+This file creates the shell scripts for the lastz and chaining stages. 
+This is invoked in the first step of the pipeline. 
+
+Read the comments for the deeper understanding of the tools used. 
+
+INVOKED BY:runLastZchain.sh
+
+
+2) runLastzChain.sh
+
+this is the primary script that does the following
+
+1) twoBitInfo: for the part.list creation (by another script __partitionSequence.pl__, read comments)
+2) once the part.list is created, we cleanse it to create target.list and query.list
+3) This sets the stage for us to invoke heredoc.pl which creates the shell scripts for each of the target and query 
+4) finally, we invoke __constructLiftFile.pl__ this creates the lift files for the liftUp tool 
+		      	

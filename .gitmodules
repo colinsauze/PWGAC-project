@@ -1,0 +1,3 @@
+[submodule "dm6/bin/lastz"]
+	path = dm6/bin/lastz
+	url = https://github.com/lastz/lastz
