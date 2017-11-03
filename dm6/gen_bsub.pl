@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+use Getopt::Std;
 
 #*****************************************************************
 #Parallel LastZ pipeline - Synopsys
@@ -46,16 +47,26 @@
 my $USERNAME=$ENV{USER};
 chomp($USERNAME);
 
+my %options=();
+getopts("c:j:s:i:t:", \%options);
 
-my $conf_dir = $ARGV[0];
+#validate each option and make sure it exists
+foreach $v ('c','j','s','i','t') {
+    if(!exists($options{$v})) {
+	help();
+	die "missing argument -$v";
+    }
+}
+
+my $conf_dir = $options{c};
 my $conf_file = $conf_dir."/TARGET.conf";
 my $db_dir = "/home/${USERNAME}/PARALLEL_LASTZ/GENOMES_DB";
 
 
-my $cores = $ARGV[1];
-my $species = $ARGV[2];
-my $step = $ARGV[3];
-my $target_species = $ARGV[4];
+my $cores = $options{j};
+my $species = $options{s};
+my $step = $options{i};
+my $target_species = $options{t};
 
 my @chromes = `cat $conf_file`;
 chomp(@chromes);
@@ -97,8 +108,6 @@ my $bsub_file = <<"BSUB_SCRIPT";
 #BSUB -q q_cf_htc_large
 #BSUB -x
 
-
-
 export bindir=$ENV{PWD}/bin
 
 time $command
@@ -114,3 +123,9 @@ BSUB_SCRIPT
 	system("bsub < bsub_${species}_${chrom_name}");
 }
 
+#prints the help message if we get the args wrong
+sub help {
+    print("Usage: ./gen_bsub.pl -c confdir -j cores -s species -i step -t target\n");
+    print("\nWhere confdir = the config dir, cores is the number of cores to use, species is the name of the species, step is either step1 or step2, target is the target directory");
+    print("Example: ./gen_bsub.pl -c conf -j 8 -s dm6 -i step1 -t anoGam1\n");
+}
