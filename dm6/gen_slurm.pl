@@ -7,8 +7,6 @@ use Getopt::Std;
 #Authors: Sidharth Kashyap &  Vasilis Lenis - University of Aberystwyth
 #Date: 09/04/2015
 
-
-
 # the lastZ pipeline involves many tools (and those are available in the bin directory)
 # the problem being solved through this code is as below
 
@@ -33,9 +31,9 @@ use Getopt::Std;
 
 #step 2: This script creates a series of directories and files
 #conf_* - contains the configuration required for each chromosome
-#bsub_* - These are the individual scripts to be invoked independently and submitted to the scheduler. These scripts contain the parameters that customize the run. 
+#sbatch_* - These are the individual scripts to be invoked independently and submitted to the scheduler. These scripts contain the parameters that customize the run. 
 
-#step3: The bsub script itself, depending on the step chosen, invokes the perl scripts in the bin directory which perform the preperation and the actual alignment respectively
+#step3: The sbatch script itself, depending on the step chosen, invokes the perl scripts in the bin directory which perform the preperation and the actual alignment respectively
 
 #finally: we get the result in the form of directories (for each target chromozome that contains sub directories with alignment files and chain files, .psl .lav and .chain files)
 # you can revolutionize the world if you have this information, AMEN!
@@ -48,10 +46,10 @@ my $USERNAME=$ENV{USER};
 chomp($USERNAME);
 
 my %options=();
-getopts("c:j:s:i:t:", \%options);
+getopts("d:c:j:s:i:t:", \%options);
 
 #validate each option and make sure it exists
-foreach $v ('c','j','s','i','t') {
+foreach $v ('d','c','j','s','i','t') {
     if(!exists($options{$v})) {
 	help();
 	die "missing argument -$v";
@@ -60,7 +58,7 @@ foreach $v ('c','j','s','i','t') {
 
 my $conf_dir = $options{c};
 my $conf_file = $conf_dir."/TARGET.conf";
-my $db_dir = "/home/${USERNAME}/PARALLEL_LASTZ/GENOMES_DB";
+my $db_dir = $options{d};
 
 
 my $cores = $options{j};
@@ -72,7 +70,8 @@ my @chromes = `cat $conf_file`;
 chomp(@chromes);
 
 my $number_of_chromes = scalar(@chromes);
-if($number_of_chromes > 100)
+#SCW has a 75 job limit
+if($number_of_chromes > 75)
 {
 	print("number of jobs exceeded limit\n");
 	exit(1);
@@ -80,7 +79,7 @@ if($number_of_chromes > 100)
 
 my $command = "";
 
-`rm -rf ./bsub_*`;
+`rm -rf ./sbatch_*`;
 `rm -rf ./conf_*`;
 
 
@@ -98,34 +97,31 @@ foreach my $chrom_name(@chromes)
 	`cp -rf $conf_dir conf_${chrom_name}`;
 	`echo $chrom_name > conf_${chrom_name}/TARGET.conf`;
 
-my $bsub_file = <<"BSUB_SCRIPT";
+my $sbatch_file = <<"SBATCH_SCRIPT";
 #!/bin/bash --login
 
-#BSUB -o runlog/V_${species}_${chrom_name}_${step}.out.%J     # Job output file
-#BSUB -e runlog/V_${species}_${chrom_name}_${step}.err.%J       #Job error output
-#BSUB -J V_${species}_${chrom_name}          # Job name
-#BSUB -n $cores
-#BSUB -q q_cf_htc_large
-#BSUB -x
+#SBATCH -o runlog/V_${species}_${chrom_name}_${step}.out.%J     # Job output file
+#SBATCH -e runlog/V_${species}_${chrom_name}_${step}.err.%J       #Job error output
+#SBATCH -J V_${species}_${chrom_name}          # Job name
+#SBATCH -n $cores
 
 export bindir=$ENV{PWD}/bin
 
-time $command
+srun --ntasks-per-node=12 -n $cores time $command
 
-wait
-BSUB_SCRIPT
+SBATCH_SCRIPT
 
-	open (RUNL, ">bsub_${species}_${chrom_name}");
-	print RUNL $bsub_file;
+	open (RUNL, ">sbatch_${species}_${chrom_name}");
+	print RUNL $sbatch_file;
 	close(RUNL);
 
 
-	system("bsub < bsub_${species}_${chrom_name}");
+#	system("sbatch < sbatch_${species}_${chrom_name}");
 }
 
 #prints the help message if we get the args wrong
 sub help {
-    print("Usage: ./gen_bsub.pl -c confdir -j cores -s species -i step -t target\n");
+    print("Usage: ./gen_sbatch.pl -d databasedir -c confdir -j cores -s species -i step -t target\n");
     print("\nWhere confdir = the config dir, cores is the number of cores to use, species is the name of the species, step is either step1 or step2, target is the target directory");
-    print("Example: ./gen_bsub.pl -c conf -j 8 -s dm6 -i step1 -t anoGam1\n");
+    print("Example: ./gen_sbatch.pl -d ../GENOMES_DB -c conf -j 8 -s dm6 -i step1 -t anoGam1\n");
 }
