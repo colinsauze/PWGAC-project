@@ -26,16 +26,20 @@ GetOptions
 or die("-PAIRWISE STEP 1- Error in command line arguments\n");
 
 #/home/software.builder/PARALLEL_LASTZ/insect/bin
-my $bin = "/home/$USERNAME/PARALLEL_LASTZ/${species}/bin";
+my $bin = $ENV{bindir};
 
-my $dir = "$bin/..";
-$dir = "/home/$USERNAME/PARALLEL_LASTZ/${species}";
+my $dir = $bin."/..";
+$dir = $ENV{bindir}."../".${species};
 
 print "main dir $dir\n";
 print "Starting Lastz managing program\n";
 print "STEP 1 - species - $species\n";
 
-my $hosts_list=$ENV{LSB_HOSTS};
+my $hosts_list=$ENV{SLURM_JOB_NODELIST};
+
+print "host list=".$hosts_list;
+#my $hosts_list=$ENV{LSB_HOSTS};
+
 my @hosts = split(' ',$hosts_list);
 chomp(@hosts);
 
@@ -115,5 +119,6 @@ sub submitThread
 	my ($cmd,$number,$host) = @_;
         print "-PAIRWISE STEP 1- picked this host $host\n";
 	print "-PAIRWISE STEP 1- Executing $cmd\n";
-        system("blaunch $host $cmd");
+        print("system(\"blaunch ".$host." ".$cmd."\");");
+	#system("srun $cmd");
 }
