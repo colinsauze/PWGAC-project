@@ -26,10 +26,9 @@ GetOptions
 or die("-PAIRWISE STEP 1- Error in command line arguments\n");
 
 #/home/software.builder/PARALLEL_LASTZ/insect/bin
-my $bin = $ENV{bindir};
+my $bin = $ENV{basedir}."/bin";
 
-my $dir = $bin."/..";
-$dir = $ENV{bindir}."../".${species};
+my $dir = $ENV{basedir}."/".${species};
 
 print "main dir $dir\n";
 print "Starting Lastz managing program\n";
@@ -85,16 +84,17 @@ my $command_count=0;
 while($command_count < $number_of_commands)
 {
 	@threads=();
-	for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
+	#for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
 	{
-		foreach my $host (@hosts)
+		#foreach my $host (@hosts)
 		{
 				# sid -> this calls the subroutine and relinquishes the control
 				if($command_count < $number_of_commands)
 				{
 					my $thread_command = $commands[$command_count];
+					print "command_count = ".$command_count."\n";
 					$command_count++;
-					my $t = threads->new(\&submitThread,$thread_command,$count,$host);
+					my $t = threads->new(\&submitThread,$thread_command,$count);
                				push(@threads,$t);
 				}
 				else
@@ -116,9 +116,8 @@ close $fileHandle;
 }		
 sub submitThread
 {
-	my ($cmd,$number,$host) = @_;
-        print "-PAIRWISE STEP 1- picked this host $host\n";
+	my ($cmd,$number) = @_;
 	print "-PAIRWISE STEP 1- Executing $cmd\n";
-        print("system(\"blaunch ".$host." ".$cmd."\");");
-	#system("srun $cmd");
+        print("system(\"srun ".$cmd."\");\n");
+	system("srun $cmd");
 }

@@ -120,7 +120,7 @@ BSUB_SCRIPT
 	close(RUNL);
 
 
-	system("bsub < bsub_${species}_${chrom_name}");
+#	system("bsub < bsub_${species}_${chrom_name}");
 }
 
 #prints the help message if we get the args wrong

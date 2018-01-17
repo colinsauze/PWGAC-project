@@ -105,9 +105,10 @@ my $sbatch_file = <<"SBATCH_SCRIPT";
 #SBATCH -J V_${species}_${chrom_name}          # Job name
 #SBATCH -n $cores
 
-export bindir=$ENV{PWD}/bin
+export basedir=$ENV{PWD}
 
-srun --ntasks-per-node=12 -n $cores time $command
+#this command will be responsible for issuing multiple srun commands to launch the parallel portion
+time $command
 
 SBATCH_SCRIPT
 
