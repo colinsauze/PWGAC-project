@@ -30,7 +30,7 @@ my @query_list = `cat $config_dir/QUERY.conf`;
 my @threads;
 
 
-my $hosts_list=$ENV{LSB_HOSTS};
+my $hosts_list=$ENV{SLURM_JOB_NODELIST};
 my @hosts = split(' ',$hosts_list);
 chomp(@hosts);
 my $core_count=scalar(@hosts);
@@ -86,9 +86,9 @@ foreach my $query (@query_list)
 		{
         		@threads=();
 			my $thread_counter = 0;
-       			for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
+       			#for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
        			{
-              			foreach my $host (@hosts)
+              			#foreach my $host (@hosts)
 				{
                                 # sid -> this calls the subroutine and relinquishes the control
                                		if($command_count < $number_of_commands)
@@ -148,9 +148,9 @@ my $chain_command_count=0;
 while($chain_command_count < $number_of_chain_commands)
 {
         @chain_threads=();
-        for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
+        #for (my $nproc=0;$nproc<$NUMBER_OF_PROCESS_PER_CORE;$nproc++)
         {
-                foreach my $host (@hosts)
+                #foreach my $host (@hosts)
                 {
 			if($chain_command_count < $number_of_chain_commands)
                                 {
@@ -184,7 +184,7 @@ sub submitChainThread()
 	my ($cmd,$number,$host) = @_;
         #print "picked this host for chaining $host\n";
 	#print "-Step 2- Executin chain commands $cmd\n";
-        system("blaunch $host $cmd");
+        system("srun $cmd");
 }
 sub lavCommand 
 {
@@ -217,6 +217,6 @@ sub submitThread
 	print "-PAIRWISE STEP 2- picked this host $host\n";
 	print "-Step 2- Executing $cmd\n";
         #system("blaunch $hosts[$host_number] $cmd");
-	system("blaunch $host $cmd");
+	system("srun $cmd");
 	#chmod 0777,"$target_dir\/chainJobs_${target_name}_${query_name}.csh";
 }
