@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use Getopt::Std;
+use Cwd;
 
 #*****************************************************************
 #Parallel LastZ pipeline - Synopsys
@@ -96,6 +97,9 @@ foreach my $chrom_name(@chromes)
 	chomp($chrom_name);
 	`cp -rf $conf_dir conf_${chrom_name}`;
 	`echo $chrom_name > conf_${chrom_name}/TARGET.conf`;
+	
+	
+my $parallel_last_z_path=Cwd::realpath('..');
 
 my $sbatch_file = <<"SBATCH_SCRIPT";
 #!/bin/bash --login
@@ -106,6 +110,8 @@ my $sbatch_file = <<"SBATCH_SCRIPT";
 #SBATCH -n $cores
 
 export basedir=$ENV{PWD}
+export parallel_last_z_path=${parallel_last_z_path}
+
 
 #this command will be responsible for issuing multiple srun commands to launch the parallel portion
 time $command
@@ -117,12 +123,12 @@ SBATCH_SCRIPT
 	close(RUNL);
 
 
-#	system("sbatch < sbatch_${species}_${chrom_name}");
+	system("sbatch sbatch_${species}_${chrom_name}");
 }
 
 #prints the help message if we get the args wrong
 sub help {
-    print("Usage: ./gen_sbatch.pl -d databasedir -c confdir -j cores -s species -i step -t target\n");
+    print("Usage: ./gen_slurm.pl -d databasedir -c confdir -j cores -s species -i step -t target\n");
     print("\nWhere confdir = the config dir, cores is the number of cores to use, species is the name of the species, step is either step1 or step2, target is the target directory");
-    print("Example: ./gen_sbatch.pl -d ../GENOMES_DB -c conf -j 8 -s dm6 -i step1 -t anoGam1\n");
+    print("Example: ./gen_slurm.pl -d ../GENOMES_DB -c conf -j 8 -s dm6 -i step1 -t anoGam1\n");
 }
