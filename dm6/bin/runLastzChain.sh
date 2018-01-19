@@ -60,7 +60,7 @@ export QUERY=${DBDIR}/Genomes/${QNAME}.2bit
 
 #*******************************************************************************************
 
-/home/${USER}/PARALLEL_LASTZ/${species}/bin/UCSC_Genome_Browser/twoBitInfo $TARGET stdout | sort -k2nr > ${TDIR}/${TNAME}.chrom.sizes
+$ENV{parallel_last_z_path}/${species}/bin/UCSC_Genome_Browser/twoBitInfo $TARGET stdout | sort -k2nr > ${TDIR}/${TNAME}.chrom.sizes
 
 rm -fr ${TDIR}/${TNAME}PartList ${TDIR}/${TNAME}.part.list 2> /dev/null
 echo -n "creating the directory now ${TNAME}PartList"
@@ -68,7 +68,7 @@ mkdir ${TDIR}/${TNAME}PartList 2> /dev/null
 
 # sid - Done with Target Partlist creation, on to query now
 
- /home/${USER}/PARALLEL_LASTZ/${species}/bin/UCSC_Genome_Browser/twoBitInfo $QUERY stdout | sort -k2nr > ${TDIR}/${QNAME}.chrom.sizes
+$ENV{parallel_last_z_path}/${species}/bin/UCSC_Genome_Browser/twoBitInfo $QUERY stdout | sort -k2nr > ${TDIR}/${QNAME}.chrom.sizes
 rm -fr ${TDIR}/${QNAME}PartList ${TDIR}/${QNAME}.part.list 2> /dev/null
 echo -n "creating the directory now ${TDIR}/${QNAME}PartList"
 mkdir ${TDIR}/${QNAME}PartList 2> /dev/null
