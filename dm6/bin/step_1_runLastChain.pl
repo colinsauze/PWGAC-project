@@ -28,7 +28,8 @@ or die("-PAIRWISE STEP 1- Error in command line arguments\n");
 #/home/software.builder/PARALLEL_LASTZ/insect/bin
 my $bin = $ENV{basedir}."/bin";
 
-my $dir = $ENV{basedir}."/".${species};
+my $dir = $ENV{basedir};
+#."/".${species};
 
 print "main dir $dir\n";
 print "Starting Lastz managing program\n";
