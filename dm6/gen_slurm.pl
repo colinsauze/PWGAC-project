@@ -88,10 +88,10 @@ foreach my $chrom_name(@chromes)
 {
 
 	next if($chrom_name=~/^\s*$/);
-	my $command = "perl \$bindir/step_2_runLastChain_process_template.pl -target_dir $ENV{PWD} -config_dir conf_${chrom_name}";
+	my $command = "perl \$basedir/bin/step_2_runLastChain_process_template.pl -target_dir $ENV{PWD} -config_dir conf_${chrom_name}";
 	if($step eq "step1")
 	{
-		$command="perl \$bindir/step_1_runLastChain.pl -conf_dir conf_${chrom_name} -db_dir $db_dir -species $species -target_species $target_species";
+		$command="perl \$basedir/bin/step_1_runLastChain.pl -conf_dir conf_${chrom_name} -db_dir $db_dir -species $species -target_species $target_species";
 	}
 
 	chomp($chrom_name);
