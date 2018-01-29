@@ -24,7 +24,8 @@ chdir $workdir;
 
 #print "got this species - $species CHAIN_PARAMS=$CHAIN_PARAMS  LASTZ_PARAMS=$LASTZ_PARAMS\n";
 
-my $PWD="/home/$USERNAME/PARALLEL_LASTZ/$species";
+#my $PWD="/home/$USERNAME/PARALLEL_LASTZ/$species";
+my $PWD=$ENV{basedir};
 
 #my $PWD=$ARGV[6];
 
