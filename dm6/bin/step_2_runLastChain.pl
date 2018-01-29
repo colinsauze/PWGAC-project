@@ -30,11 +30,11 @@ my @query_list = `cat $config_dir/QUERY.conf`;
 my @threads;
 
 
-my $hosts_list=$ENV{SLURM_JOB_NODELIST};
-my @hosts = split(' ',$hosts_list);
+#my $hosts_list=$ENV{SLURM_JOB_NODELIST};
+#my @hosts = split(' ',$hosts_list);
 chomp(@hosts);
-my $core_count=scalar(@hosts);
-my $NUMBER_OF_PROCESS_PER_CORE = 3;
+#my $core_count=scalar(@hosts);
+#my $NUMBER_OF_PROCESS_PER_CORE = 3;
 my $chain_count = 0;
 
 chomp(@query_list);
